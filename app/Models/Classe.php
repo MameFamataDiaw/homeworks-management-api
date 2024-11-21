@@ -19,4 +19,9 @@ class Classe extends Model
     {
         return $this->belongsToMany(Matiere::class, 'classe_matieres');
     }
+
+    public function eleves()
+    {
+        return $this->hasMany(Eleve::class, 'classe_matieres');
+    }
 }

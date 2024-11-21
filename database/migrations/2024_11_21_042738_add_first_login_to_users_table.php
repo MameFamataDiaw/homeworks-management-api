@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('parentts', function (Blueprint $table) {
-            $table->id();
-            $table->string('telephone')->unique();
-            $table->foreignId('user_id')->unique()->constrained('users')->onDelete('cascade');
-            $table->timestamps();
+        Schema::table('users', function (Blueprint $table) {
+            $table->boolean('first_login')->default(true);
         });
     }
 
@@ -24,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('parentts');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('first_login');
+        });
     }
 };

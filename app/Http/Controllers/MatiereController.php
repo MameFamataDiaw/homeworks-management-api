@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Matiere;
 use Illuminate\Http\Request;
+use DB;
 
 class MatiereController extends Controller
 {
@@ -19,6 +20,23 @@ class MatiereController extends Controller
         ]);
     }
 
+
+    public function getMatieres(Request $request)
+    {
+        $query = $request->get('query');
+
+        $data = DB::table('matieres');
+
+        if (!is_null($query)) {
+            $matieres = $data->where('nomMatiere','like','%'.$query.'%');
+
+            return response($matieres->paginate(10),200);
+        }
+
+        return response($data->paginate(10),200);
+    }
+
+
     /**
      * Store a newly created resource in storage.
      */
@@ -28,7 +46,7 @@ class MatiereController extends Controller
         {
             $request->validate(
                 [
-                    'nomMatiere' => 'required|string|unique:matieres,nomMatiere|max:20',
+                    'nomMatiere' => 'required|string|unique:matieres,nomMatiere|max:100',
                 ]
             );
 
@@ -77,7 +95,7 @@ class MatiereController extends Controller
                     'nomMatiere' => 'required|string|unique:matieres,nomMatiere|max:20',
                 ]
             );
-            
+
             // Mettre à jour les autres champs
             $matiere->update([
                 'nomMatiere' => $request->nomMatiere,

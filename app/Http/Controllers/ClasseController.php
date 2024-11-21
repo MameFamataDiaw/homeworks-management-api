@@ -7,6 +7,7 @@ use http\Env\Response;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use DB;
 
 class ClasseController extends Controller
 {
@@ -22,6 +23,21 @@ class ClasseController extends Controller
         ]);
     }
 
+    public function getClasses(Request $request)
+    {
+        $query = $request->get('query');
+
+        $data = DB::table('classes');
+
+        if (!is_null($query)) {
+            $classes = $data->where('nomClasse','like','%'.$query.'%');
+
+            return response($classes->paginate(10),200);
+        }
+
+        return response($data->paginate(10),200);
+    }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -32,8 +48,7 @@ class ClasseController extends Controller
             $request->validate(
                 [
                     'nomClasse' => 'required|string|unique:classes,nomClasse|max:10',
-                    'niveau' => 'required|string|max:20',
-
+                    'niveau' => 'required|string|max:50',
                 ]
             );
 
@@ -82,15 +97,13 @@ class ClasseController extends Controller
                 [
                     'nomClasse' => 'required|string|unique:classes,nomClasse|max:10',
                     'niveau' => 'required|string|max:20',
-                    'effectif' => 'required|integer|max:50',
                 ]
             );
-            
+
             // Mettre à jour les autres champs
             $classe->update([
                 'nomClasse' => $request->nomClasse,
                 'niveau' => $request->niveau,
-                'effectif' => $request->effectif,
             ]);
 
             return response()->json([

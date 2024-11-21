@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -73,6 +74,16 @@ class AuthController extends Controller
             ], 401);
         }
 
+        // Vérifier si l'utilisateur n'est pas un administrateur
+    if ($user->role != 'admin' && $user->first_login) {
+        // Si l'utilisateur n'est pas un admin, vérifier s'il est connecté pour la première fois
+            // Rediriger l'utilisateur vers la page de changement de mot de passe
+            return response()->json([
+                'status' => false,
+                'message' => 'Vous devez changer votre mot de passe lors de votre première connexion.',
+            ], 403); // Forbidden, car l'utilisateur ne peut pas accéder à la plateforme avant de changer son mot de passe
+    }
+
         $token = $user->createToken($this->secretKey)->plainTextToken;
 
         return response()->json([
@@ -97,4 +108,26 @@ class AuthController extends Controller
             ], 500);
         }
     }
+
+    public function userIdLoggedIn(Request $request){
+        return response(['message'=>''],200);
+    }
+
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        $user = Auth::user();
+        $user->password = bcrypt($request->password);
+        $user->first_login = false; // Marquer comme ayant changé le mot de passe
+        $user->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Mot de passe modifié avec succès.',
+        ]);
+    }
+
 }

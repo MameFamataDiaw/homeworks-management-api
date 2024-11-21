@@ -13,9 +13,8 @@ return new class extends Migration
     {
         Schema::create('eleves', function (Blueprint $table) {
             $table->id();
-            $table->string('matricule')->unique();
             $table->foreignId('parentt_id');
-            $table->foreignId('classe_id');
+            $table->foreignId('classe_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
