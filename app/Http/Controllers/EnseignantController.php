@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Enseignant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use App\Mail\AccountCreated;
@@ -107,5 +108,41 @@ class EnseignantController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function getTeacherClassInfo() {
+        $user = Auth::user();
+
+        if ($user->role !== 'enseignant') {
+            return response()->json([
+                'error' => 'Acces non authorise'
+            ], 403);
+        }
+
+
+    // Debugger les données
+    //dd($enseignant, $enseignant->classe);
+
+        $classe = $user->classe;
+        $elevesCount = $classe->eleves->count();
+        // $devoirs = $classe->devoirs;
+
+        // $devoirsCount = $devoirs->count();
+        // $soumisCount = $devoirs->where('soumis', true)->count();
+        // $nonSoumisCount = $devoirsCount - $soumisCount;
+
+        if (!$classe) {
+            return response()->json(['error' => 'Classe non trouvée.'], 404);
+        }
+
+        return response()->json([
+            'classe' => $classe->nomClasse,
+            'elevesCount' => $elevesCount,
+            'effectif' => $classe->effectif,
+            // 'devoirsCount' => $devoirsCount,
+            // 'soumisCount' => $soumisCount,
+            // 'nonSoumisCount' => $nonSoumisCount,
+            // 'devoirs' => $devoirs,
+        ]);
     }
 }

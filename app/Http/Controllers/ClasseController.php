@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Classe;
+use App\Models\User;
+use App\Models\Enseignant;
 use http\Env\Response;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -149,6 +151,49 @@ class ClasseController extends Controller
         return response()->json([
             'message' => 'Matiere attribuèe à classe.',
             'classe' => $classe->load('matieres'),
+        ]);
+    }
+
+    public function assignTeacherToClass (Request $request, $classeId) {
+       $request->validate([
+        // 'classe_id' => 'required|exists:classes,id',
+        'enseignant_id' => 'required|exists:enseignants,id',
+       ]);
+
+       $enseignantId = $request->input('enseignant_id');
+
+        // $enseignant = User::where('id', $enseignantId)->where('role', 'enseignant')->first();
+        $enseignant = Enseignant::findOrFail($enseignantId);
+
+    //     if (!$enseignant) {
+    //     return response()->json([
+    //         'message' => "L'utilisateur selectionne n'est pas un enseignant."
+    //     ], 400);
+    //    }
+
+    if ($enseignant->user->role !== 'enseignant') {
+        return response()->json([
+            'message' => "L'utilisateur sélectionné n'est pas un enseignant."
+        ], 400);
+    }
+
+
+    $classe = Classe::findOrFail($classeId);
+
+       if ($classe->enseignant_id && $classe->enseignant_id !== $enseignant->user_id) {
+        return response()->json([
+            'message' => "Cette classe est deja assignee a un autre enseignant"
+        ], 400);
+       }
+
+
+        $classe->enseignant_id = $enseignant->user_id;
+        $classe->save();
+
+        return response()->json([
+            'message' => "L'enseignant a ete attribue a la classe",
+            'classe' => $classe->nomClasse,
+            'enseignant' =>$enseignant,
         ]);
     }
 

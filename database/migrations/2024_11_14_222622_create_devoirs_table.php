@@ -13,15 +13,13 @@ return new class extends Migration
     {
         Schema::create('devoirs', function (Blueprint $table) {
             $table->id();
-            $table->string('titre');
+            $table->string('module');
             $table->string('contenu');
             $table->date('dateAjout');
-            $table->date('dateRemise');
+            // $table->date('dateRemise');
             $table->string('document')->nullable();
-            $table->foreignId('enseignant_id');
-            $table->foreignId('classe_id');
-            $table->foreignId('matiere_id');
-            $table->foreignId('parent_id');
+            $table->foreignId('classe_id')->constrained('classes')->onDelete('cascade');
+            $table->foreignId('matiere_id')->constrained('matieres')->onDelete('cascade');
             $table->timestamps();
         });
     }

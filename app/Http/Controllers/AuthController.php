@@ -26,7 +26,7 @@ class AuthController extends Controller
             'genre' => 'required|in:masculin,feminin',
             'role' => 'in:admin,enseignant,parent,eleve',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
+            'password' => 'required|string|min:8|confirmed',
         ]);
 
         if ($errors->fails()) {
@@ -52,7 +52,8 @@ class AuthController extends Controller
     /**
      * this method login a user
      */
-    public function login (Request $request) {
+    public function login (Request $request)
+    {
         $fields = $request->all();
 
         $errors = Validator::make($fields,[
@@ -70,26 +71,27 @@ class AuthController extends Controller
 
             return response()->json([
                 'status' => false,
-                'messaGE' => 'email ou mot de passe invalide.',
+                'message' => 'email ou mot de passe invalide.',
             ], 401);
         }
 
-        // Vérifier si l'utilisateur n'est pas un administrateur
-    if ($user->role != 'admin' && $user->first_login) {
-        // Si l'utilisateur n'est pas un admin, vérifier s'il est connecté pour la première fois
-            // Rediriger l'utilisateur vers la page de changement de mot de passe
-            return response()->json([
-                'status' => false,
-                'message' => 'Vous devez changer votre mot de passe lors de votre première connexion.',
-            ], 403); // Forbidden, car l'utilisateur ne peut pas accéder à la plateforme avant de changer son mot de passe
-    }
-
         $token = $user->createToken($this->secretKey)->plainTextToken;
 
-        return response()->json([
-            'user' => $user,
-            'token' => $token
-        ]);
+        // Vérifier si l'utilisateur n'est pas un administrateur
+        if ($user->role != 'admin' && $user->first_login) {
+            return response()->json([
+                'status' => true,
+                'action_required' => 'change_password',
+                'message' => 'Merci de changer votre mot de passe lors de votre première connexion.',
+                'user' => $user,
+                'token' => $token, // Inclure le token ici aussi
+            ], 200);
+        }
+
+            return response()->json([
+                'user' => $user,
+                'token' => $token
+            ]);
     }
 
     public function logout(Request $request)
@@ -127,6 +129,12 @@ class AuthController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Mot de passe modifié avec succès.',
+            'user' => [
+                'id' => $user->id,
+                'prenom' => $user->prenom,
+                'nom' => $user->nom,
+                'role' => $user->role, // Ajout du rôle
+            ],
         ]);
     }
 

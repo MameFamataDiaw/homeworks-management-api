@@ -1,4 +1,4 @@
-<?php
+ <?php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('nomClasse')->unique();
             $table->string('niveau');
             $table->integer('effectif')->default(0);
+            $table->foreignId('enseignant_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }

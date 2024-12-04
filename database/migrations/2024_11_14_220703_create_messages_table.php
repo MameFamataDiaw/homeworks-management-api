@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('contenu');
             $table->enum('type',['question','rappel','reponse'])->default('question')->nullable();
             $table->enum('statut',['lu','non lu','repondu'])->default('non lu');
-            $table->foreignId('parentt_id');
-            $table->foreignId('enseignant_id');
+            $table->foreignId('parentt_id')->constrained('users')->onDelete('cascade');;
+            $table->foreignId('enseignant_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
     }

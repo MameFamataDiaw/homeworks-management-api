@@ -8,6 +8,7 @@ use App\Http\Controllers\MatiereController;
 use App\Http\Controllers\EnseignantController;
 use App\Http\Controllers\ParentController;
 use App\Http\Controllers\EleveController;
+use App\Http\Controllers\DevoirController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,7 +30,7 @@ Route::group(['middleware'=>['auth:sanctum']],function(){
     Route::post('/firstLogin', [AuthController::class, 'changePassword']);
 });
 
-Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
 // Gestion des classes
      // Route::apiResource('classes', ClasseController::class);
     Route::get('/classes', [ClasseController::class, 'index']);
@@ -39,6 +40,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::put('/classes/{id}', [ClasseController::class, 'update']);
     Route::delete('/classes/{id}', [ClasseController::class, 'destroy']);
     Route::post('/classes/{id}/matieres', [ClasseController::class, 'assignSubjectsToClass']);
+    Route::post('/classes/{id}/enseignant', [ClasseController::class, 'assignTeacherToClass']);
 
     // Gestion des matieres
     Route::get('/matieres', [MatiereController::class, 'index']);
@@ -54,5 +56,13 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
 
     // Gestion des parents
     Route::post('/parents', [ParentController::class, 'store']);
-    Route::post('/eleves', [EleveController::class, 'store']);
+    Route::apiResource('eleves', EleveController::class);
+});
+
+Route::middleware(['auth:sanctum', 'role:enseignant'])->prefix('enseignants')->group(function () {
+    Route::get('/classe',[EnseignantController::class,'getTeacherClassInfo']);
+    Route::apiResource('devoirs', DevoirController::class);
+    Route::get('/matieres/classe', [MatiereController::class, 'getMatieresByClasse']);
+    Route::get('/eleves/classe', [EleveController::class, 'getElevesByClasse']);
+
 });

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Matiere;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use DB;
 
@@ -35,6 +37,89 @@ class MatiereController extends Controller
 
         return response($data->paginate(10),200);
     }
+
+    public function getMatieresByClasse(Request $request)
+    {
+        $query = $request->get('query');
+        $user = Auth::user();
+        //auth()->user();
+
+        if ($user->role !== 'enseignant') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Vous n\'etes pas autorise a acceder a cette ressource.',
+                'role_detected' => $user->role
+            ], 403);
+        }
+
+        // Recuperer la classes enseignes par cette enseignant
+        $classes = $user->classe()->with('matieres')->get();
+
+        // Compiler toutes les matieres associees
+        $matieres = $classes->flatMap(function ($classe) {
+            return $classe->matieres;
+        })->unique('id');
+
+        if (!is_null($query)) {
+            $matieres = $matieres->filter(function ($matiere) use ($query) {
+                return stripos($matiere->nomMatiere, $query) !== false;
+            });
+        }
+
+        // paginer les resultats
+        $page = $request->get('page', 1);
+        $perPage = 10;
+        $paginated = $matieres->slice(($page - 1) * $perPage, $perPage);
+
+
+        return response()->json([
+            'status' => true,
+            'data' => $paginated,
+            'total' => $matieres->count(),
+            'current_page' => $page,
+            'last_page' => ceil($matieres->count() / $perPage),
+        ]);
+    }
+
+    // public function getMatieresByClasse(Request $request)
+    // {
+    //     $user = Auth::user();
+
+    //     // Vérifier si l'utilisateur est bien un enseignant
+    //     if ($user->role !== 'enseignant') {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Vous n\'êtes pas autorisé à accéder à cette ressource.',
+    //             'role_detected' => $user->role,
+    //             'role_expected' => 'enseignant',
+    //         ], 403);
+    //     }
+
+    //     // Récupérer la classe de l'enseignant
+    //     $classe = $user->classe;
+    //     if (!$classe) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Aucune classe assignée à cet enseignant.',
+    //         ], 404);
+    //     }
+
+    //     // Récupérer les matières associées à cette classe
+    //     $query = $request->get('query');
+    //     $matieres = $classe->matieres();
+
+    //     if ($query) {
+    //         $matieres = $matieres->where('nomMatiere', 'LIKE', "%{$query}%");
+    //     }
+
+    //     $matieres = $matieres->get();
+
+    //     return response()->json([
+    //         'status' => true,
+    //         'data' => $matieres,
+    //     ]);
+    // }
+
 
 
     /**

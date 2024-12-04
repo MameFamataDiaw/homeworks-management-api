@@ -18,8 +18,8 @@ return new class extends Migration
             $table->enum('statut',['en cours','soumis','non rendu'])->default('en cours');
             $table->decimal('note')->nullable();
             $table->string('commentaire')->nullable();
-            $table->foreignId('devoir_id');
-            $table->foreignId('eleve_id');
+            $table->foreignId('devoir_id')->constrained('devoirs')->onDelete('cascade');
+            $table->foreignId('eleve_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
     }

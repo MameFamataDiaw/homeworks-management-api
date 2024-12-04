@@ -40,6 +40,10 @@ class User extends Authenticatable
         return $this->hasOne(Eleve::class);
     }
 
+    public function classe()
+    {
+        return $this->hasOne(Classe::class, 'enseignant_id');
+    }
     /**
      * The attributes that should be hidden for serialization.
      *
