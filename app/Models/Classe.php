@@ -22,7 +22,7 @@ class Classe extends Model
 
     public function eleves()
     {
-        return $this->hasMany(Eleve::class);
+        return $this->hasMany(Eleve::class, 'classe_id');
     }
 
     public function enseignant()
@@ -32,7 +32,7 @@ class Classe extends Model
 
     public function devoirs()
     {
-        return $this->hasMany(Devoir::class);
+        return $this->hasMany(Devoir::class, 'classe_id');
     }
 }
 

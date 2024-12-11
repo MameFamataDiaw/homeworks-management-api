@@ -33,7 +33,7 @@ class User extends Authenticatable
 
     public function parent()
     {
-        return $this->hasOne(Parent::class);
+        return $this->hasOne(Parentt::class);
     }
     public function eleve()
     {

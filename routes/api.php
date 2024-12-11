@@ -9,6 +9,7 @@ use App\Http\Controllers\EnseignantController;
 use App\Http\Controllers\ParentController;
 use App\Http\Controllers\EleveController;
 use App\Http\Controllers\DevoirController;
+use App\Mail\DevoirAssigned;
 
 /*
 |--------------------------------------------------------------------------
@@ -64,5 +65,15 @@ Route::middleware(['auth:sanctum', 'role:enseignant'])->prefix('enseignants')->g
     Route::apiResource('devoirs', DevoirController::class);
     Route::get('/matieres/classe', [MatiereController::class, 'getMatieresByClasse']);
     Route::get('/eleves/classe', [EleveController::class, 'getElevesByClasse']);
+    Route::post('/devoirs/{devoir}/assigner', [DevoirController::class, 'assignDevoir']);
 
+});
+
+Route::middleware(['auth:sanctum', 'role:parent'])->prefix('parents')->group(function () {
+    Route::get('/enfants', [ParentController::class, 'getEnfants']);
+    Route::get('/devoirsAssignes', [ParentController::class, 'getDevoirsAssignes']);
+});
+
+Route::middleware(['auth:sanctum', 'role:eleve'])->prefix('eleves')->group(function () {
+    Route::get('/devoirsAfaire', [EleveController::class, 'getDevoirsAfaire']);
 });

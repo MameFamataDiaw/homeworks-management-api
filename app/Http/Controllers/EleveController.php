@@ -6,12 +6,14 @@ use App\Models\User;
 use App\Models\Parentt;
 use App\Models\Eleve;
 use App\Models\Classe;
+use App\Models\Devoir;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use App\Mail\StudentAccountCreated;
 use App\Services\MailService;
+use DB;
 
 class EleveController extends Controller
 {
@@ -96,16 +98,36 @@ class EleveController extends Controller
                 ]
             );
 
-            // Récupérer l'ID du parent en fonction de l'email
-        $parent = User::where('email', $request->email_parent)->first();
-        if (!$parent) {
-            return response()->json([
-                'status' => false,
-                'message' => "Parent non trouvé avec cet email.",
-            ], 400);
-        }
+            // Faites plutôt
+            $parent_user = User::where('email', $request->email_parent)->first();
+            if (!$parent_user) {
+                return response()->json([
+                    'status' => false,
+                    'message' => "Parent non trouvé avec cet email.",
+                ], 400);
+            }
 
-        $parent_id = $parent->id; // Récupérer l'ID du parent
+            // Récupérer l'enregistrement correspondant dans la table parentts
+            $parent = Parentt::where('user_id', $parent_user->id)->first();
+            if (!$parent) {
+                return response()->json([
+                    'status' => false,
+                    'message' => "Enregistrement parent non trouvé.",
+                ], 400);
+            }
+
+            $parent_id = $parent->id; // Ceci sera l'ID de la table parentts
+
+            // // Récupérer l'ID du parent en fonction de l'email
+            // $parent = User::where('email', $request->email_parent)->first();
+            // if (!$parent) {
+            //     return response()->json([
+            //         'status' => false,
+            //         'message' => "Parent non trouvé avec cet email.",
+            //     ], 400);
+            // }
+
+            // $parent_id = $parent->id; // Récupérer l'ID du parent
 
         // Récupérer l'ID de la classe en fonction du nom
         $classe = Classe::where('nomClasse', $request->nom_classe)->first();
@@ -137,6 +159,23 @@ class EleveController extends Controller
                 'parentt_id' => $parent_id,
                 'classe_id' => $classe_id,
             ]);
+
+
+            // // Récupérer les devoirs assignés à la classe
+            // $devoirs = Devoir::where('classe_id', $validated['classe_id'])->get();
+
+            // // Ajouter les devoirs pour cet élève dans la table `soumissions`
+            // foreach ($devoirs as $devoir) {
+            //     DB::table('soumissions')->insert([
+            //         'devoir_id' => $devoir->id,
+            //         'eleve_id' => $eleve->user_id,
+            //         'dateAttribution' => now(),
+            //         'dateSoumission' => null,
+            //         'soumis' => false,
+            //         'created_at' => now(),
+            //         'updated_at' => now(),
+            //     ]);
+            // }
 
             // Incrementer l'effectif de la classe
             $classe->increment('effectif');
@@ -171,6 +210,56 @@ class EleveController extends Controller
             ], 400);
         }
     }
+
+    public function getDevoirsAfaire(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user || $user->role !== 'eleve') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Utilisateur non autorise ou non eleve.'
+            ], 403);
+        }
+
+        $eleve = Eleve::where('user_id', $user->id)->with('devoirsAssignes')->first();
+
+
+        if (!$eleve) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Eleve introuvable.',
+            ]);
+        }
+
+        $devoirsAfaire = $eleve->devoirsAssignes->map(function ($devoir) {
+            return [
+                'devoir_id' => $devoir->pivot->devoir_id,
+                'matiere' => $devoir->matiere->nomMatiere,
+                'module' => $devoir->module,
+                'dateAttribution' => $devoir->pivot->dateAttribution,
+                'dateSoumission' => $devoir->pivot->dateSoumission,
+                'soumis' => $devoir->pivot->soumis,
+                'note' => $devoir->pivot->note,
+                'commentaire' => $devoir->pivot->commentaire,
+            ];
+        });
+
+        if ($devoirsAfaire->isEmpty()) {
+            return response()->json([
+                'status' => true,
+                'message' => 'Aucun devoir assigne a cet eleve.',
+                'devoirs' => [],
+            ]);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Devoirs a faire recuperes.',
+            'devoirs' => $devoirsAfaire,
+        ], 200);
+    }
+
 
     /**
      * Display the specified resource.

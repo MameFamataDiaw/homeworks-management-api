@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('soumissions', function (Blueprint $table) {
             $table->id();
-            $table->date('dateAssigned');
+            $table->date('dateAttribution');
             $table->date('dateSoumission');
-            $table->enum('statut',['en cours','soumis','non rendu'])->default('en cours');
+            $table->boolean('soumis')->default(false);
             $table->decimal('note')->nullable();
             $table->string('commentaire')->nullable();
             $table->foreignId('devoir_id')->constrained('devoirs')->onDelete('cascade');

@@ -7,9 +7,17 @@ use App\Models\Devoir;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use App\Mail\DevoirAssigned;
+use App\Services\MailService;
 
 class DevoirController extends Controller
 {
+    protected $mailService;
+
+    public function __construct(MailService $mailService)
+    {
+        $this->mailService = $mailService;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -98,6 +106,113 @@ class DevoirController extends Controller
                 'error' => $e->getMessage()
             ], 400);
         }
+    }
+
+    public function assignDevoir(Request $request, $devoirId)
+    {
+        $user = Auth::user();
+
+        if($user->role !== 'enseignant') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Acces non autorise.'
+            ], 403);
+        }
+
+        $devoir = Devoir::findOrFail($devoirId);
+
+        $classe = $user->classe;
+
+        if (!$classe || $devoir->classe_id !== $classe->id) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Ce devoir ne peut etre assigne.'
+            ], 403);
+        }
+
+        $eleves = $classe->eleves;
+
+        if ($eleves->isEmpty()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Aucun eleve dans cette classe.'
+            ], 404);
+        }
+
+        $request->validate([
+            'dateSoumission' => 'required|date|after:today',
+        ]);
+        $dateSoumission = $request->dateSoumission;
+
+        // Regrouper les données à insérer dans la table pivot
+        $now = now();
+        $data = [];
+
+        foreach ($eleves as $eleve) {
+           $data[$eleve->id] = [
+            'dateAttribution' => $now,
+            'dateSoumission' => $dateSoumission,
+            'soumis' => false,
+           ];
+
+            // Details du mail
+            $parent = $eleve->parent;
+            if ($parent && $parent->email) {
+                $details = [
+                    'nom_eleve' => $eleve->prenom . ' ' . $eleve->nom,
+                    'nom_classe' => $classe->nomClasse,
+                    'module' => $devoir->module,
+                    'dateSoumission' => $dateSoumission
+                ];
+
+                // Envoyer l'email au parent
+                try {
+                    $this->mailService->sendMail($parent->email, new DevoirAssigned($details));
+                } catch (\Exception $e) {
+                    \Log::error("Erreur lors de l'envoi de l'e-mail à " . $parent->email . ": " . $e->getMessage());
+                }
+            }
+            if (!$parent || !$parent->email) {
+                \Log::info("Pas d'e-mail pour le parent de l'élève : " . $eleve->id);
+                continue;
+            }
+        }
+        // foreach ($eleves as $eleve) {
+        //     // Détails du mail
+        //     $parent = $eleve->parent;  // Vérifie si l'élève a un parent
+        //     if ($parent && $parent->user && $parent->user->email) {
+        //         $details = [
+        //             'nom_eleve' => $eleve->prenom . ' ' . $eleve->nom,
+        //             'nom_classe' => $classe->nomClasse,
+        //             'module' => $devoir->module,
+        //             'dateSoumission' => $dateSoumission
+        //         ];
+
+        //         // Envoyer l'email au parent
+        //         try {
+        //             $this->mailService->sendMail($parent->user->email, new DevoirAssigned($details));  // Utilisez $parent->user->email
+        //         } catch (\Exception $e) {
+        //             \Log::error("Erreur lors de l'envoi de l'e-mail à " . $parent->user->email . ": " . $e->getMessage());
+        //         }
+        //     } else {
+        //         \Log::info("Pas d'e-mail pour le parent de l'élève : " . $eleve->id);
+        //     }
+        // }
+
+
+        // Assigner le devoir a chaque eleve
+        $devoir->eleves()->syncWithoutDetaching($data);
+
+        \Log::info("Assignation du devoir ID: " . $devoir->id . " à la classe ID: " . $classe->id);
+
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Le devoir a ete assigne avec succes et un email est envoye aux parents.',
+            'devoir' => $devoir->module,
+            'data' => $data
+        ]);
+
     }
 
     /**

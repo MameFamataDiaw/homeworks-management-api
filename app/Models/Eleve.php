@@ -17,16 +17,24 @@ class Eleve extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function classe()
     {
-        return $this->belongsTo(Classe::class);
+        return $this->belongsTo(Classe::class, 'classe_id'); // Vérifiez que 'classe_id' correspond bien à votre base de données.
     }
 
-    public function parentt()
+    public function parent()
     {
-        return $this->belongsTo(Parentt::class);
+        return $this->belongsTo(Parentt::class, 'parentt_id');
     }
+
+    public function devoirsAssignes()
+    {
+        return $this->belongsToMany(Devoir::class, 'soumissions')
+                    ->withPivot('dateAttribution', 'dateSoumission', 'soumis', 'note', 'commentaire')
+                    ->withTimestamps();
+    }
+
 }

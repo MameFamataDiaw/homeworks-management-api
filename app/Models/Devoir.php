@@ -20,11 +20,16 @@ class Devoir extends Model
 
     public function classe()
     {
-        return $this->belongsTo(Classe::class);
+        return $this->belongsTo(Classe::class, 'classe_id');
     }
 
     public function matiere()
     {
         return $this->belongsTo(Matiere::class);
+    }
+
+    public function eleves()
+    {
+        return $this->belongsToMany(Eleve::class, 'soumissions')->withTimestamps();
     }
 }

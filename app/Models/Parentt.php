@@ -19,8 +19,8 @@ class Parentt extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function eleves()
+    public function enfants()
     {
-        return $this->hasMany(Eleve::class);
+        return $this->hasMany(Eleve::class, 'parentt_id');
     }
 }
