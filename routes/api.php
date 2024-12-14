@@ -9,6 +9,7 @@ use App\Http\Controllers\EnseignantController;
 use App\Http\Controllers\ParentController;
 use App\Http\Controllers\EleveController;
 use App\Http\Controllers\DevoirController;
+use App\Http\Controllers\SoumissionController;
 use App\Mail\DevoirAssigned;
 
 /*
@@ -62,10 +63,12 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
 
 Route::middleware(['auth:sanctum', 'role:enseignant'])->prefix('enseignants')->group(function () {
     Route::get('/classe',[EnseignantController::class,'getTeacherClassInfo']);
+    Route::get('/devoirsAssignes',[DevoirController::class,'getAssignedDevoirs']);
     Route::apiResource('devoirs', DevoirController::class);
     Route::get('/matieres/classe', [MatiereController::class, 'getMatieresByClasse']);
     Route::get('/eleves/classe', [EleveController::class, 'getElevesByClasse']);
     Route::post('/devoirs/{devoir}/assigner', [DevoirController::class, 'assignDevoir']);
+    Route::get('/getSoumissions/{devoirId}', [SoumissionController::class, 'getSoumissions']);
 
 });
 
@@ -76,4 +79,5 @@ Route::middleware(['auth:sanctum', 'role:parent'])->prefix('parents')->group(fun
 
 Route::middleware(['auth:sanctum', 'role:eleve'])->prefix('eleves')->group(function () {
     Route::get('/devoirsAfaire', [EleveController::class, 'getDevoirsAfaire']);
+    Route::post('/soumettre/{devoirId}', [SoumissionController::class, 'soumettreDevoir']);
 });

@@ -27,7 +27,7 @@ class Classe extends Model
 
     public function enseignant()
     {
-        return $this->belongsTo(User::class, 'enseignant_id')->where('role', 'enseignant');
+        return $this->belongsTo(User::class, 'enseignant_id');
     }
 
     public function devoirs()

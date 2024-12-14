@@ -238,7 +238,7 @@ class EleveController extends Controller
                 'matiere' => $devoir->matiere->nomMatiere,
                 'module' => $devoir->module,
                 'dateAttribution' => $devoir->pivot->dateAttribution,
-                'dateSoumission' => $devoir->pivot->dateSoumission,
+                'aRendre' => $devoir->pivot->aRendre,
                 'soumis' => $devoir->pivot->soumis,
                 'note' => $devoir->pivot->note,
                 'commentaire' => $devoir->pivot->commentaire,

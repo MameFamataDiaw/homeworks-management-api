@@ -33,7 +33,7 @@ class Eleve extends Model
     public function devoirsAssignes()
     {
         return $this->belongsToMany(Devoir::class, 'soumissions')
-                    ->withPivot('dateAttribution', 'dateSoumission', 'soumis', 'note', 'commentaire')
+                    ->withPivot('dateAttribution', 'aRendre', 'soumis', 'dateSoumission', 'document', 'note', 'commentaire')
                     ->withTimestamps();
     }
 

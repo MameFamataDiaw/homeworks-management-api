@@ -15,8 +15,10 @@ class Soumission extends Model
     // Colonnes modifiables
     protected $fillable = [
         'dateAttribution',
-        'dateSoumission',
+        'aRendre',
         'soumis',
+        'dateSoumission',
+        'document',
         'note',
         'commentaire',
         'devoir_id',
@@ -38,7 +40,7 @@ class Soumission extends Model
     // Accesseurs ou mutateurs pour le format des dates et le booléen
     protected $casts = [
         'dateAttribution' => 'date',
-        'dateSoumission' => 'date',
+        'aRendre' => 'date',
         'soumis' => 'boolean',
     ];
 

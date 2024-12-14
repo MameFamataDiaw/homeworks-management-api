@@ -23,12 +23,113 @@ class DevoirController extends Controller
      */
     public function index()
     {
-        $devoirs = Devoir::all();
+        // $devoirs = Devoir::all();
+        // return response()->json([
+        //     'status' => true,
+        //     'devoirs' => $devoirs
+        // ]);
+
+        $user = Auth::user();
+
+        // Vérifiez si l'utilisateur est un enseignant
+        if ($user->role !== 'enseignant') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Accès non autorisé.'
+            ], 403);
+        }
+
+        // Récupérez la classe associée à l'enseignant
+        $classe = $user->classe;
+
+        if (!$classe) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Aucune classe trouvée pour cet enseignant.'
+            ], 404);
+        }
+
+        // Récupérez les devoirs créés pour la classe
+        $devoirs = Devoir::where('classe_id', $classe->id)->get();
+
+        if ($devoirs->isEmpty()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Aucun devoir créé pour cette classe.'
+            ], 404);
+        }
+
         return response()->json([
             'status' => true,
+            'message' => 'Liste des devoirs créés récupérée avec succès.',
             'devoirs' => $devoirs
         ]);
     }
+
+    public function getAssignedDevoirs ()
+    {
+        $user = Auth::user();
+
+        // Vérifiez si l'utilisateur est un enseignant
+        if ($user->role !== 'enseignant') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Accès non autorisé.'
+            ], 403);
+        }
+
+        // Récupérez la classe associée à l'enseignant
+        $classe = $user->classe;
+
+        if (!$classe) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Aucune classe trouvée pour cet enseignant.'
+            ], 404);
+        }
+
+        // Récupérez les devoirs assignés avec les informations de la table pivot et la matière associée
+        $devoirsAssignes = Devoir::with(['matiere', 'eleves' => function ($query) {
+            $query->select(
+                'soumissions.devoir_id',
+                'soumissions.dateAttribution',
+                'soumissions.aRendre'
+            );
+        }])
+            ->where('classe_id', $classe->id)
+            ->whereHas('eleves') // Vérifiez que le devoir est assigné à au moins un élève
+            ->get();
+
+        // Formater la réponse pour inclure les détails nécessaires
+        $result = $devoirsAssignes->map(function ($devoir) {
+            return [
+                'id' => $devoir->id,
+                'matiere' => $devoir->matiere->nomMatiere ?? null, // Matière associée
+                'module' => $devoir->module,
+                'soumissions' => $devoir->eleves->map(function ($eleve) {
+                    return [
+                        'dateAttribution' => $eleve->pivot->dateAttribution,
+                        'aRendre' => $eleve->pivot->aRendre
+                    ];
+                })->unique() // Éviter les doublons si plusieurs élèves partagent le même devoir
+            ];
+        });
+
+        if ($result->isEmpty()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Aucun devoir assigné trouvé pour cette classe.'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Liste des devoirs assignés récupérée avec succès.',
+            'devoirs' => $result
+        ]);
+
+    }
+
 
     /**
      * Store a newly created resource in storage.
@@ -140,9 +241,9 @@ class DevoirController extends Controller
         }
 
         $request->validate([
-            'dateSoumission' => 'required|date|after:today',
+            'aRendre' => 'required|date|after:today',
         ]);
-        $dateSoumission = $request->dateSoumission;
+        $aRendre = $request->aRendre;
 
         // Regrouper les données à insérer dans la table pivot
         $now = now();
@@ -151,7 +252,7 @@ class DevoirController extends Controller
         foreach ($eleves as $eleve) {
            $data[$eleve->id] = [
             'dateAttribution' => $now,
-            'dateSoumission' => $dateSoumission,
+            'aRendre' => $aRendre,
             'soumis' => false,
            ];
 
@@ -162,7 +263,7 @@ class DevoirController extends Controller
                     'nom_eleve' => $eleve->prenom . ' ' . $eleve->nom,
                     'nom_classe' => $classe->nomClasse,
                     'module' => $devoir->module,
-                    'dateSoumission' => $dateSoumission
+                    'aRendre' => $aRendre
                 ];
 
                 // Envoyer l'email au parent
@@ -177,28 +278,6 @@ class DevoirController extends Controller
                 continue;
             }
         }
-        // foreach ($eleves as $eleve) {
-        //     // Détails du mail
-        //     $parent = $eleve->parent;  // Vérifie si l'élève a un parent
-        //     if ($parent && $parent->user && $parent->user->email) {
-        //         $details = [
-        //             'nom_eleve' => $eleve->prenom . ' ' . $eleve->nom,
-        //             'nom_classe' => $classe->nomClasse,
-        //             'module' => $devoir->module,
-        //             'dateSoumission' => $dateSoumission
-        //         ];
-
-        //         // Envoyer l'email au parent
-        //         try {
-        //             $this->mailService->sendMail($parent->user->email, new DevoirAssigned($details));  // Utilisez $parent->user->email
-        //         } catch (\Exception $e) {
-        //             \Log::error("Erreur lors de l'envoi de l'e-mail à " . $parent->user->email . ": " . $e->getMessage());
-        //         }
-        //     } else {
-        //         \Log::info("Pas d'e-mail pour le parent de l'élève : " . $eleve->id);
-        //     }
-        // }
-
 
         // Assigner le devoir a chaque eleve
         $devoir->eleves()->syncWithoutDetaching($data);

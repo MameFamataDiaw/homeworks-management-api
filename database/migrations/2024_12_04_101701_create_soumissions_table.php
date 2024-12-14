@@ -14,12 +14,12 @@ return new class extends Migration
         Schema::create('soumissions', function (Blueprint $table) {
             $table->id();
             $table->date('dateAttribution');
-            $table->date('dateSoumission');
+            $table->date('aRendre');
             $table->boolean('soumis')->default(false);
             $table->decimal('note')->nullable();
             $table->string('commentaire')->nullable();
             $table->foreignId('devoir_id')->constrained('devoirs')->onDelete('cascade');
-            $table->foreignId('eleve_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('eleve_id')->constrained('eleves')->onDelete('cascade');
             $table->timestamps();
         });
     }

@@ -164,7 +164,7 @@ class ParentController extends Controller
                 'matiere' => $devoir->matiere->nomMatiere,
                 'module' => $devoir->module,
                 'date_attribution' => $devoir->pivot->dateAttribution,
-                'date_soumission' => $devoir->pivot->dateSoumission,
+                'A_Rendre' => $devoir->pivot->aRendre,
                 'soumis' => $devoir->pivot->soumis,
                 'note' => $devoir->pivot->note,
                 'commentaire' => $devoir->pivot->commentaire,

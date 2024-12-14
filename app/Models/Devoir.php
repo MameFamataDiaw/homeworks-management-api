@@ -30,6 +30,8 @@ class Devoir extends Model
 
     public function eleves()
     {
-        return $this->belongsToMany(Eleve::class, 'soumissions')->withTimestamps();
+        return $this->belongsToMany(Eleve::class, 'soumissions')
+        ->withPivot('dateAttribution', 'aRendre', 'soumis', 'dateSoumission', 'document', 'note', 'commentaire')
+        ->withTimestamps();
     }
 }
